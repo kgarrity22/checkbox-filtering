@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Load d3.js and the geo projection plugin -->
+<script src="https://d3js.org/d3.v4.js"></script>
+<script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+
+<style>
+    table {
+        display: block;
+        border: 1px solid black;
+        border-spacing: 0.5rem;
+    };
+
+</style>
+
+<div id="all-checkboxes">
+    <div id="industry-checks">
+        <strong>
+            <p>Industry</p>
+        </strong>
+        <input class="checks" type="checkbox" value="Sponsor_Type" name="Industry">
+        <label for="Industry">Industry</label>
+        <input class="checks" type="checkbox" value="Sponsor_Type" name="Non-Industry">
+        <label for="Non-Industry">Non-Industry</label>
+    </div>
+
+    <div id="status-checks">
+        <strong>
+            <p>Status</p>
+        </strong>
+        <input class="checks" type="checkbox" value="Status" name="Completed">
+        <label for="Completed">Completed</label>
+        <input class="checks" type="checkbox" value="Status" name="Terminated">
+        <label for="Terminated">Terminated</label>
+        <input class="checks" type="checkbox" value="Status" name="Recruiting">
+        <label for="Completed">Recruiting</label>
+        <input class="checks" type="checkbox" value="Status" name="Active, not recruiting">
+        <label for="Active, not recruiting">Completed</label>
+        <input class="checks" type="checkbox" value="Status" name="Unknown Status">
+        <label for="Unknown Status">Unknown Status</label>
+        <input class="checks" type="checkbox" value="Status" name="Not yet recruiting">
+        <label for="Not yet recruiting">Not yet recruiting</label>
+        <input class="checks" type="checkbox" value="Status" name="Withdrawn">
+        <label for="Withdrawn">Withdrawn</label>
+        <input class="checks" type="checkbox" value="Status" name="Enrolling by invitation">
+        <label for="Enrolling by invitation">Enrolling by invitation</label>
+    </div>
+
+    <div id="intervention-checks">
+        <strong>
+            <p>Intervention Types</p>
+        </strong>
+        <input class="checks" type="checkbox" value="Intervention_Types" name="Drug">
+        <label for="Drug">Drug</label>
+        <input class="checks" type="checkbox" value="Intervention_Types" name="Biological">
+        <label for="Biological">Biological</label>
+        <input class="checks" type="checkbox" value="Intervention_Types" name="Device">
+        <label for="Device">Device</label>
+        <input class="checks" type="checkbox" value="Intervention_Types" name="Behavioral">
+        <label for="Behavioral">Behavioral</label>
+        <input class="checks" type="checkbox" value="Intervention_Types" name="Dietary Supplement">
+        <label for="Dietary Supplement">Dietary Supplement</label>
+        <input class="checks" type="checkbox" value="Intervention_Types" name="Procedure">
+        <label for="Procedure">Procedure</label>
+        <input class="checks" type="checkbox" value="Intervention_Types" name="Radiation">
+        <label for="Radiation">Radiation</label>
+        <input class="checks" type="checkbox" value="Intervention_Types" name="Genetic">
+        <label for="Genetic">Genetic</label>
+    </div>
+
+    <body>
+        <div class="place">
+            
+        </div>
+        <svg id="my_dataviz" width="600" height="1000"></svg>
+    
+    </body>
+<!-- Create an element where the table will take place -->
+
+
+
+<script>
+
+    // The svg
+    var svg = d3.select("svg"),
+        width = +svg.attr("width"),
+        height = +svg.attr("height");
+        
+    
+    
+
+    d3.csv('lupus.csv', function (data) {
+        console.log(data);
+        console.log("COLUMNS :", data.columns);
+
+         
+
+        
+
+        
+        
+        //createTable(data);
+        var table = d3.select('.place').append("table");
+        
+        
+        table = d3.selectAll("table")
+
+        d3.selectAll(".checks").on("change", updateTable);
+        updateTable(); 
+              
+        
+
+        function updateTable() {
+            
+            var selected = [];
+            var industry_select = [];
+            var status_select = [];
+            var intervention_select = [];
+            
+            d3.selectAll(".checks").each(function(d){
+                check = d3.select(this);
+                
+                if(check.property("checked")){
+
+                    if (check.property("value")=="Sponsor_Type"){
+                        industry_select.push(check.property("name"));
+                    } else if (check.property("value") == "Status") {
+                        status_select.push(check.property("name"));
+                    } else if (check.property("value") == "Intervention_Types") {
+                        intervention_select.push(check.property("name"));
+                    }
+                    selected.push(check.property("name"));
+                }
+                
+                
+            });
+            console.log("industries:", industry_select);
+             console.log("statuses:", status_select);
+              console.log("interventions:", intervention_select);
+              console.log("selected: ", selected)
+
+            var newlist = [];
+
+            
+            if (selected.length > 0){
+                console.log("Selected; ", selected)
+                newData = data.filter(function(d, i){
+                    //console.log("HERE: ", industry_select.indexOf(d.Sponsor_Type)!==-1)
+                    //console.log("checking status : ", status_select.indexOf(d.Status), "but: ", status_select.length == 0);
+                    // trying out one of each 
+                    //console.log("1: ", (industry_select.indexOf(d.Sponsor_Type) !== -1 || industry_select.length == 0) )
+                    //console.log("1: ", (status_select.indexOf(d.Status) == -1 || status_select.length == 0) )
+                    //console.log("1: ", (industry_select.indexOf(d.Sponsor_Type) !== -1 || industry_select.length == 0))
+                    if ( ( industry_select.indexOf(d.Sponsor_Type)!==-1 || industry_select.length == 0 ) 
+                    && ( status_select.indexOf(d.Status)!==-1 || status_select.length == 0) 
+                    && (intervention_select.indexOf(d.Intervention_Types)!==-1|| intervention_select.length == 0)){
+                        //console.log("D: ", d);
+                        newlist.push(d)
+                        
+                        return newlist
+                        
+                    } else {
+                        return
+                    }
+                });
+                //console.log(newlist.length)
+                //console.log("New data here: ", newData)
+            } else {
+
+                newData = data;
+                //console.log("newdata is now: ", newData);
+            }
+
+
+            //createTable(newlist);
+            console.log(data.columns)
+            thead = table.selectAll("th")
+                .data(data.columns).enter()
+                .append("th")
+                .text(function (d) {
+                    console.log(d);
+                    return d;
+                });
+
+            newRows = table.selectAll("tr")
+                .data(newData, function(d){
+                    //console.log("d for table row is ", d);
+                    return d;
+                })
+            
+            newRows.enter()
+                .append("tr")
+                .selectAll("td")
+                .data(function(row){
+                    return data.columns.map(function(column){
+                        return {
+                            column: column,
+                            value: row[column]
+                        };
+                    })
+                })
+                .enter()
+                .append("td")
+                .text(function(d){
+                    //console.log("the cell text is: ", d);
+                    return d.value;
+                });
+            newRows.exit()
+                .remove();
+        };
+
+        // function createTable(data) {
+
+        //     // create table
+        //     var table = d3.select('.place').append("table");
+        //     var thead = table.append("thead");
+        //     var tbody = table.append("tbody");
+
+
+        //     thead.append("tr")
+        //         .selectAll("th")
+        //         .data(data.columns).enter()
+        //         .append("th")
+        //         .text(function (d) {
+        //             return d;
+        //         });
+
+        //     var rows = tbody.selectAll("tr")
+        //         .data(data)
+        //         .enter()
+        //         .append("tr")
+
+        //     var cells = rows.selectAll("td")
+        //         .data(function (row) {
+        //             return data.columns.map(function (column) {
+        //                 return {
+        //                     column: column,
+        //                     value: row[column]
+        //                 };
+        //             });
+        //         })
+        //         .enter()
+        //         .append("td")
+        //         .text(function (d) {
+        //             return d.value;
+        //         });
+        //     return table;
+        // };
+
+         
+
+
+
+    });
+
+    
+
+
+
+</script>
+
+</html>
