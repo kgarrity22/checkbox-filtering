@@ -51,7 +51,6 @@ label {
 
 table {
         display: block;
-        /* border: 1px solid rgb(212, 191, 191); */
         border-spacing: 0.5rem;
         overflow-y: auto;
         height: 400px;
@@ -66,9 +65,7 @@ table {
     margin-left: 70px;
     margin-bottom: 25px;
 }
-/* table, th, td {
-  border: 1px solid black;
-} */
+
 
 th {
     text-align: left;
@@ -78,7 +75,7 @@ th {
 }
 
 td {
-    /* text-align: left; */
+    
     border-top: 0.5px solid lightgray;
     border-bottom: 0.5px solid lightgray;
     padding: 3px;
@@ -106,22 +103,6 @@ div.scrollable {
     padding: 0;
     overflow: auto;
 }
-
-/* td {
-    padding-left: 20px;
-    padding-right: 20px;
-    /* border: 1px solid black; */
-    /* width: 50px;
-    height: 0px;
-    overflow: auto;
-} */ 
-
-
-/* tr:nth-child(even) {background-color: #f2f2f2;}
-tr:hover {background-color: gray;} */
-
-
-
 
 
 div.tooltip {	
