@@ -1,0 +1,845 @@
+
+{% block body %}
+
+<head>
+    <script type="text/javascript" src="https://mbostock.github.com/d3/d3.js?2.4.5"></script>
+    <script src="https://d3js.org/d3.v4.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-csv/0.71/jquery.csv-0.71.min.js"></script>
+    
+        
+    <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+    <script src="https://kit.fontawesome.com/786166de9a.js" crossorigin="anonymous"></script>
+
+    <link href="https://unpkg.com/tabulator-tables@4.8.3/dist/css/tabulator.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.8.3/dist/js/tabulator.min.js"></script>
+    <!-- Milligram CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.css">
+    <link rel="stylesheet" href="/static/style.css">
+    
+    <!-- You should properly set the path from the main file. -->
+    
+
+    <!-- <script type="text/javascript" src="vis_functions.js"></script> -->
+    <!-- <link rel="stylesheet" type="text/css" href="style.css"> -->
+
+
+    
+    </head>
+
+    <body>
+        
+        <div class='container'>
+            <h3>Welcome! Search for any disease!</h3>
+            <form>
+                <input type=text size=30 name='disease'>
+                <a href=# id=process_input><button class='btn btn-default'>Search</button></a>
+            </form>
+    
+            <p id=result></p>
+            <div>
+                <button id="download-csv">Download CSV</button>
+                <!-- <button id="download-xlsx">Download XLSX</button> -->
+            </div>
+
+            <div id="table-container">
+                <div id="tableholder"></div>
+            </div>
+            
+
+            <div class="column-3">
+                <div class="div_RootBody" id="pie_chart_1">
+                    <h3 class="h3_Body">Industry Breakdown</h3>
+                    <div class="chart"></div>
+                </div>
+            </div>
+            
+            
+            <div class="column-3">
+                <div class="div_RootBody" id="pie_chart_2">
+                    <h3 class="h3_Body">Status Breakdown</h3>
+                    <div class="chart"></div>
+                </div>
+            </div>
+            
+            
+            <div class="column-3">
+                <div class="div_RootBody" id="pie_chart_3">
+                    <h3 class="h3_Body">Intervention Breakdown</h3>
+                    <div class="chart"></div>
+                </div>
+            </div>
+            
+            
+
+            <svg id="my_dataviz" width="600" height="100"></svg>
+
+    
+        </div>
+    </body>
+
+
+
+
+    <script type=text/javascript>
+    document.getElementById("download-csv").style.display = "none";
+                        //console.log(document.getElementById("download-csv"))
+                        // console.log(document.getElementById("download-xlsx"))
+                        //console.log(document.getElementsByClassName("h3_body"))
+                        // document.getElementById("download-xlsx").style.display = "none";
+                        document.getElementsByClassName("h3_body")[0].style.display = "none";
+                        document.getElementsByClassName("h3_body")[1].style.display = "none";
+                        document.getElementsByClassName("h3_body")[2].style.display = "none";
+    
+    var data;
+    var newData;
+    var pie_clicked = [];
+    var svg = d3.select("svg"),
+            width = 400,
+            height = +svg.attr("height");
+
+        // tooltip div
+        var div = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+        
+         var table = d3.select('.place').append("table");
+
+
+        table = d3.selectAll("table");
+        table.attr("id", "main-table");
+
+    $(function() {
+			  $('a#process_input').bind('click', function() {
+                  var dis = $('input[name="disease"]').val();
+                  console.log("dis: ", dis)
+				$.getJSON('/get_trials', {
+				  disease_name: $('input[name="disease"]').val(),
+                  
+				}, function(data) {
+                        //console.log("Searched: ", disease_name)
+                        // $("#result").text(data);
+
+                        d3.selectAll(".chart").remove();
+                        d3.selectAll(".div_RootBody").append("div").attr("class", "chart");
+
+                        data = data;
+                        tabledata = data;
+                        console.log("data: ", data)
+
+                        var table = new Tabulator("#tableholder", {
+                            data:tabledata,           //load row data from array
+                            //layout:"fitColumns",      //fit columns to width of table
+                            //responsiveLayout:"hide",  //hide columns that dont fit on the table
+                            //tooltips:true,            //show tool tips on cells
+                            // addRowPos:"top",          //when adding a new row, add it to the top of the table
+                            // history:true,             //allow undo and redo actions on the table
+                            // pagination:"local",       //paginate the data
+                            // paginationSize:7,         //allow 7 rows per page of data
+                            // movableColumns:true,      //allow column order to be changed
+                            // resizableRows:true,       //allow row order to be changed
+                            initialSort:[             //set the initial sort order of the data
+                                {column:"name", dir:"asc"},
+                            ],
+                            height:"400px",
+                            columns:[                 //define the table columns
+                            {title:"Sponsor", field:"LeadSponsorName", width:250},
+                            {title:"Sponsor Type", field:"LeadSponsorClass", width:150, headerFilter:"input"},
+                            {title:"Interventions", field:"InterventionName", width:150},
+                            {title:"Intervention Types", field:"InterventionType", width:150, headerFilter:"input"},
+                            {title:"Status", field:"OverallStatus", width:150, headerFilter:"input"},
+                            {title:"NCT", field:"NCTId", width:130, sorter:"date", width:150},
+                            {title:"Start Year", field:"StartDate", sorter:"date", width:150},
+                            {title:"Title", field:"BriefTitle", sorter:"false", width:150},
+                            {title:"Phase", field:"Phase", width:150},
+                            {title:"Primary Outcome", field:"PrimaryOutcomeDescription", sorter:"false", width:150},
+                            
+                            ],
+                        });
+
+                        document.getElementById("download-csv").style.display = "inline";
+                        //console.log(document.getElementById("download-csv"))
+                        // console.log(document.getElementById("download-xlsx"))
+                        //console.log(document.getElementsByClassName("h3_body"))
+                        //document.getElementById("download-xlsx").style.display = "inline";
+                        document.getElementsByClassName("h3_body")[0].style.display = "inline";
+                        document.getElementsByClassName("h3_body")[1].style.display = "inline";
+                        document.getElementsByClassName("h3_body")[2].style.display = "inline";
+
+
+                        // initial pie creation
+                        var pie_data = createPieDataSets(data);
+                        //console.log("pie data: ", pie_data)
+                        drawPie(pie_data[0], "#pie_chart_1 .chart", 10, 100, 0, 0)
+                        drawPie(pie_data[1], "#pie_chart_2 .chart", 10, 100, 0, 0);
+                        drawPie(pie_data[2], "#pie_chart_3 .chart", 10, 100, 0, 0)
+
+                        //trigger download of data.csv file
+                        document.getElementById("download-csv").addEventListener("click", function(){
+                            table.download("csv", "data.csv");
+                        });
+
+
+                        //trigger download of data.xlsx file
+                        // document.getElementById("download-xlsx").addEventListener("click", function(){
+                        //     table.download("xlsx", "data.xlsx", {sheetName:"My Data"});
+                        // });
+                    });
+                    
+                    
+        
+                
+				return false;
+
+                
+			  });
+              
+			});
+            
+        
+                        // var table = new Tabulator("#tableholder", {
+                        //     data:tabledata,           //load row data from array
+                        //     //layout:"fitColumns",      //fit columns to width of table
+                        //     //responsiveLayout:"hide",  //hide columns that dont fit on the table
+                        //     //tooltips:true,            //show tool tips on cells
+                        //     // addRowPos:"top",          //when adding a new row, add it to the top of the table
+                        //     // history:true,             //allow undo and redo actions on the table
+                        //     // pagination:"local",       //paginate the data
+                        //     // paginationSize:7,         //allow 7 rows per page of data
+                        //     // movableColumns:true,      //allow column order to be changed
+                        //     // resizableRows:true,       //allow row order to be changed
+                        //     initialSort:[             //set the initial sort order of the data
+                        //         {column:"name", dir:"asc"},
+                        //     ],
+                        //     height:"400px",
+                        //     columns:[                 //define the table columns
+                        //     {title:"Sponsor", field:"LeadSponsorName", width:250},
+                        //     {title:"Sponsor Type", field:"LeadSponsorClass", width:150},
+                        //     {title:"Interventions", field:"InterventionName", width:150},
+                        //     {title:"Intervention Types", field:"InterventionType", width:150},
+                        //     {title:"Status", field:"OverallStatus", width:150},
+                        //     {title:"NCT", field:"NCTId", width:130, sorter:"date", width:150},
+                        //     {title:"Start Year", field:"StartDate", sorter:"date", width:150},
+                        //     {title:"Title", field:"BriefTitle", sorter:"false", width:150},
+                        //     {title:"Phase", field:"Phase", width:150},
+                        //     {title:"Primary Outcome", field:"PrimaryOutcomeDescription", sorter:"false", width:150},
+                            
+                        //     ],
+                        // });
+                        
+                        
+
+                        
+
+
+
+                    
+
+
+                        //updateTable(data);
+                        //console.log("table: ", table)
+
+                        
+            
+        
+
+
+
+
+        
+        // if i put the other function in here and then just run it inside 
+
+        
+
+
+        // // Returns data formatted and filtered for the table
+        //     function filterData() {
+        //         var selected = [];
+        //         var industry_select = [];
+        //         var status_select = [];
+        //         var intervention_select = [];
+        //         var oldData = data;
+
+
+        //         d3.selectAll(".checks").each(function (d) {
+        //             check = d3.select(this);
+        //             if (check.property("checked")) {
+        //                 if (check.property("value") == "Sponsor_Type") {
+        //                     if (check.property("name") == "Industry") {
+        //                         industry_select.push(check.property("name"));
+        //                     } else {
+        //                         industry_select.push("Other");
+        //                         industry_select.push("U.S. Gov");
+        //                     };
+        //                 } else if (check.property("value") == "Status") {
+        //                     status_select.push(check.property("name"));
+        //                 } else if (check.property("value") == "Intervention_Types") {
+        //                     intervention_select.push(check.property("name"));
+        //                 };
+        //                 selected.push(check.property("name"));
+        //             }
+
+
+        //         });
+
+        //         // console.log("industries:", industry_select);
+        //         // console.log("statuses:", status_select);
+        //         // console.log("interventions:", intervention_select);
+        //         // console.log("selected: ", selected)
+
+        //         var newlist = [];
+
+
+        //         if (selected.length > 0) {
+                    
+        //             newData = data.filter(function (d, i) {
+        //                 var multi = [];
+
+        //                 if (d.Intervention_Types !== undefined) {
+        //                     // console.log("Intervention: ", d.Intervention_Types, typeof(d.Intervention_Types))
+        //                     var multi = d.Intervention_Types.split(",");
+        //                     //console.log("MULTI: ", multi);
+        //                 }
+
+
+        //                 if ((industry_select.indexOf(d.Sponsor_Type) !== -1 || industry_select.length == 0)
+        //                     && (status_select.indexOf(d.Status) !== -1 || status_select.length == 0)) {
+        //                     if (multi.length !== 0) {
+        //                         if (intervention_select.some(item => (multi.indexOf(item) >= 0)) || intervention_select.length == 0) {
+        //                             // console.log(multi.some(item => (intervention_select.includes(item))));
+        //                             // console.log("Intervention and multi compare: ", intervention_select, ",", multi)
+        //                             newlist.push(d)
+        //                             return newlist
+        //                         }
+        //                     } else if ((intervention_select.indexOf(d.Intervention_Types) !== -1 || intervention_select.length == 0)) {
+        //                         newlist.push(d)
+        //                         return newlist
+        //                     }
+        //                 } else {
+        //                     return
+        //                 }
+        //             });
+
+        //         } else {
+        //             newData = data;
+        //         }
+
+        //         if (newData.length==0){
+        //             window.alert("Nope data");
+                    
+        //             return oldData;
+        //         }
+        //         else {
+        //             console.log("NEW data for the end :", newData)
+        //             return newData;
+        //         }
+
+                
+                
+        //     }// end of filter data
+
+
+            // // Displays newData in the table
+            // function updateTable(newData) {
+                
+            //     console.log("getting an idea of what the data looks like: ", newData)
+
+            //         // // empty row is added because the top row kept sticking to the table and not disappearing on refresh
+            //         // newData.unshift({ "Status": "", "Sponsor_Type": "", "Intervention_Types": "" })
+
+
+            //         var columns = ["Sponsor", "Sponsor Type", "Interventions", "Intervention Types", "Status", "NCT", "Start Year", "Title", "Phase", "Primary Outcome"]
+            //         var exact_columns = ["BriefSummary", "BriefTitle", "InterventionName", "InterventionType", "LeadSponsorClass", "LeadSponsorName", "NCTId", "OverallStatus", "Phase", "PrimaryOutcomeDescription", "Rank", "StartDate"]
+                    
+            //         // create the table headers
+            //         thead = table.selectAll("th")
+            //             .data(columns).enter()
+            //             .append("th")
+            //             .text(function (d) {
+            //                 //console.log("header: ", d)
+            //                 //working
+            //                 // console.log("trying to see table head", d);
+            //                 return d;
+            //             })
+            //             .append("i")
+            //             .attr("class", "fas fa-sort")
+                    
+            //         // when a header is clicked, sort by that column
+            //         thead.on("click", function (d, i) {
+            //             return sortTable(i);
+            //         })
+
+                    
+            //         newRows = table.selectAll("tr")
+            //             .data(newData, function (d) {
+            //                 //console.log("table data: ", d)
+            //                 return d;
+            //             })
+
+                    
+            //         newRows.enter()
+            //             .append("tr")
+            //             .attr("class", function (d) {
+            //                 // this adds a class attribute to the empty row so we can hide it in the css
+            //                 if (d.Sponsor_Type=="" && d.Intervention_Types == "" && d.Status=="") {
+            //                     return "empty-row";
+            //                 } else {
+            //                     return;
+            //                 }
+            //             })
+            //             .selectAll("td")
+            //             .data(function (newData) {
+
+            //                 return newData;
+            //             })
+            //             newRows
+            //             .enter()
+            //             .append("td")
+            //             .append("div")
+            //             .attr("class", "scrollable")
+            //             .text(function (d) {
+            //                 cols = Object.keys(d)
+            //                 var i=0;
+            //                 while (i<cols.length){
+            //                     console.log("D: ", d[cols[i]]);
+            //                     console.log("I: ", i)
+            //                     i=i+1;
+            //                     return d[cols[i]]
+            //                 }
+                            
+                            
+                           
+                            
+            //             });
+
+
+            //         newRows.exit()
+            //             .remove();
+
+            // }; // end of create table
+
+
+            // // takes an integer to tell us which column to look at and sorts the table on that column
+            // // ** this could be improved with a faster sorting algorithm
+            // function sortTable(n) {
+                
+            //     var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+
+            //     table = document.getElementById("main-table");
+            //     // console.log("Table: ", table)
+            //     switching = true;
+            //     // Set the sorting direction to ascending:
+            //     dir = "asc";
+                
+
+            //     while (switching) {
+                    
+            //         switching = false;
+            //         rows = table.rows;
+                    
+            //         // loop through all rows except headers
+            //         for (i = 1; i < (rows.length - 1); i++) {
+                        
+            //             shouldSwitch = false;
+                        
+            //             x = rows[i].getElementsByTagName("TD")[n];
+            //             y = rows[i + 1].getElementsByTagName("TD")[n];
+                        
+
+            //             if (dir == "asc") {
+            //                 if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+            //                     // If so, mark as a switch and break the loop:
+            //                     shouldSwitch = true;
+            //                     break;
+            //                 }
+            //             } else if (dir == "desc") {
+            //                 if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+            //                     // If so, mark as a switch and break the loop:
+            //                     shouldSwitch = true;
+            //                     break;
+            //                 }
+            //             }
+            //         }
+            //         if (shouldSwitch) {
+                        
+            //             rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+            //             switching = true;
+            //             switchcount++;
+
+            //         } else {
+        
+            //             if (switchcount == 0 && dir == "asc") {
+            //                 dir = "desc";
+            //                 switching = true;
+            //             }
+            //         }
+            //     }
+            // } // end of sort table
+
+
+
+            // Returns list containing data set formatted for each pie
+            function createPieDataSets(data) {
+                var status = {};
+                // console.log("DATA in pie data: ", data)
+                for (i = 0; i < data.length; i++) {
+                    if (data[i].OverallStatus in status) {
+                        status[data[i].OverallStatus] += 1;
+                    } else {
+                        status[data[i].OverallStatus] = 1;
+                    }
+                }
+
+                var sponsors = {};
+                for (i = 0; i < data.length; i++) {
+                    if (data[i].LeadSponsorClass in sponsors) {
+                        sponsors[data[i].LeadSponsorClass] += 1;
+                    } else {
+                        sponsors[data[i].LeadSponsorClass] = 1;
+                    }
+                }
+
+                var interventions = {}
+                for (i = 0; i < data.length; i++) {
+                    //console.log("DATA in pie func: ", data)
+                    //console.log("data[i]: ", data[i].InterventionType)
+                    if (data[i].InterventionType.indexOf('|') > -1) {
+
+                        var multi = data[i].InterventionType.split("|");
+
+                        for (var item of multi) {
+                            if (item in interventions) {
+                                interventions[item] += 1;
+                            } else {
+                                interventions[item] = 1;
+                            }
+                        }
+                    } else if (data[i].InterventionType in interventions) {
+                        interventions[data[i].InterventionType] += 1;
+                    } else {
+                        interventions[data[i].Intervention_ype] = 1;
+                    }
+                }
+                
+                sponsor_set = []
+                intervention_set = []
+                status_set = []
+
+
+                
+                for (var p = 0; p < Object.keys(sponsors).length-1; p++) {
+                    var sponsor = {}
+                    sponsor[Object.keys(sponsors)[p]] = Object.values(sponsors)[p];
+                    sponsor_set.push(sponsor);
+                }
+               
+
+                for (var j = 0; j < Object.keys(status).length; j++) {
+
+                    var stats = {}
+                    stats[Object.keys(status)[j]] = Object.values(status)[j];
+                    status_set.push(stats);
+                }
+                
+
+                for (var k = 1; k < Object.keys(interventions).length; k++) {
+                    var intervention = {}
+                    intervention[Object.keys(interventions)[k]] = Object.values(interventions)[k];
+                    intervention_set.push(intervention);
+                    
+                }
+               
+
+                //console.log("filter pie: sponsors", sponsor_set,  " statuses ", status_set, "interventions ", intervention_set)
+                
+                return ([sponsor_set, status_set, intervention_set]);
+            } // end of create pie data
+            
+
+            // takes a dataset and draws the pies
+            function drawPie(dataSet, selectString, margin, outerRadius, innerRadius) {
+                if (dataSet.length==0) {
+                    dataSet=newData;
+                    // console.log("dataset: ", dataSet)
+                    return;
+                } else {
+
+
+                    var color = d3.scaleOrdinal(d3.schemeCategory20c);
+
+                    // if the data has any empty rows in it, remove it
+                    if (Object.keys(dataSet[0]) == "") {
+                        dataSet.shift(0);
+                    }
+
+
+                    var canvasWidth = 700;
+                    var pieWidthTotal = outerRadius * 2;;
+                    var pieCenterX = outerRadius + margin / 2;
+                    var pieCenterY = outerRadius + margin / 2;
+
+                    var legendBulletOffset = 30;
+                    var legendVerticalOffset = outerRadius - margin;
+                    var legendTextOffset = 20;
+                    var textVerticalSpace = 20;
+
+                    var canvasHeight = 0;
+                    var pieDrivenHeight = outerRadius * 2 + margin * 2;
+                    var legendTextDrivenHeight = (dataSet.length * textVerticalSpace) + margin * 2;
+
+                    if (pieDrivenHeight >= legendTextDrivenHeight) {
+                        canvasHeight = pieDrivenHeight;
+                    }
+                    else {
+                        canvasHeight = legendTextDrivenHeight;
+                    }
+                    
+
+                    var x = d3.scale.linear().domain([0, d3.max(dataSet, function (d) { return Object.values(d)[0]; })]).rangeRound([0, pieWidthTotal]);
+                    var y = d3.scale.linear().domain([0, Object.keys(dataSet).length]).range([0, (Object.keys(dataSet).length * 20)]);
+
+
+                    var tweenPie = function (b) {
+                        b.innerRadius = 0;
+                        var i = d3.interpolate({ startAngle: 0, endAngle: 0 }, b);
+                        return function (t) {
+                            return arc(i(t));
+                        };
+                    }
+
+                    
+                    var canvas = d3.select(selectString)
+                        .append("svg:svg") 
+                        .data([dataSet]) 
+                        .attr("width", canvasWidth) 
+                        .attr("height", canvasHeight) 
+                        .append("svg:g") 
+                        .attr("transform", "translate(" + pieCenterX + "," + pieCenterY + ")") 
+
+                    // Define an arc generator
+                    var arc = d3.svg.arc()
+                         
+                        .outerRadius(outerRadius);
+
+                    
+                    var pie = d3.layout.pie()
+                        .value(function (d) { return Object.values(d)[0]; })
+
+                    
+                    var arcs = canvas.selectAll("g.slice")
+                        .data(pie)
+                        .enter().append("svg:a")
+                        
+                        .append("svg:g")
+                        .attr("class", "slice")   
+                        .style("stroke", "White")
+                        .attr("d", arc);
+
+
+
+                    arcs.append("svg:path")
+
+                        // This creates the actual SVG path using the associated data (pie) with the arc drawing function
+                        .attr("fill", function (d, i) { return color(i); })
+                        .attr("color_value", function (d, i) { return color(i); }) // Bar fill color...
+                        .attr("index_value", function (d, i) { return "index-" + i; })
+                        .style("stroke", "White")
+                        .attr("d", arc)
+                        .on("mouseover", function (d) {
+                            
+                            div.transition()
+                                .duration(200)
+                                .style("opacity", .9);
+                            
+                            
+                            div.html("Type: " + Object.keys(d.data)[0].charAt(0) + Object.keys(d.data)[0].slice(1).toLowerCase() + "<br/> Total: " + Object.values(d.data)[0])
+                                .style("left", (d3.event.pageX) + "px")
+                                .style("top", (d3.event.pageY - 28) + "px");
+                        })
+                        .on("mouseout", function (d) {
+                            
+                            div.transition()
+                                .duration(500)
+                                .style("opacity", 0);
+                        })
+                        .transition()
+                        .duration(1500)
+                        .delay(function (d, i) { return i * 50; })
+                        .attrTween("d", tweenPie);
+
+                    function angle(d) {
+                        var a = (d.startAngle + d.endAngle) * 90 / Math.PI - 90;
+                        return a > 90 ? a - 180 : a;
+                    }
+
+                    var legend = canvas.selectAll(".legend")
+                        .data(color.domain())
+                        .enter()
+                        .append("g")
+                        .attr("class", "legend")
+
+                    legend.selectAll("rect")
+                        .data(dataSet)
+                        .enter()
+                        .append("rect")
+                        .attr("width", 10)
+                        .attr("height", 10)
+                        .attr("x", function (d, i) {
+                            return 110;
+                        })
+                        .attr("y", function (d, i) {
+                            return (i * 20) - 60;
+                        })
+                        .attr("class", function (d, i) {
+
+                            if (Object.keys(d)[0] == "") {
+
+                                return "legend0";
+                            } else {
+                                return "non-legend";
+                            }
+                        })
+                        .style("fill", function (d, i) {
+                            return color(i)
+                        });
+                    
+
+                    legend.selectAll("text")
+                        .data(dataSet)
+                        .enter()
+                        .append("text")
+                        .attr("x", function (d, i) {
+                            return 120;
+                        })
+                        .attr("y", function (d, i) {
+                            return (i * 20) - 50;
+                        })
+                        .text(function (d) {
+                            let text_key = Object.keys(d)[0].toLowerCase()
+                            
+                            return text_key.charAt(0).toUpperCase() + text_key.slice(1);
+                        })
+                        .style("font-size", 12)
+
+                    // executes when a pie section is clicked
+                    arcs.on("click", function (d, i) {
+                        console.log("D in pie click: ", d)
+                        console.log("INPUT: ", Object.keys(d.data)[0])
+                        var input = Object.keys(d.data)[0];
+                        
+                        console.log("pie clicked: ", pie_clicked)
+                        if (pie_clicked.length > 1) {
+                            pie_clicked = [];
+                        }
+
+                        if (pie_clicked.indexOf(input) == -1) {
+                            pie_clicked.push(input);
+                        } else {
+                            pie_clicked = pie_clicked.filter(function (d) {
+                                return d !== input;
+                            })
+                        }
+                        
+                        var newdata = filterPie(pie_clicked)
+                        var new_pie = createPieDataSets(newdata);
+
+                        d3.selectAll(".chart").remove();
+                        d3.selectAll(".div_RootBody").append("div").attr("class", "chart");
+
+
+                        drawPie(new_pie[0], "#pie_chart_1 .chart", 10, 100, 0, 0)
+                        drawPie(new_pie[1], "#pie_chart_2 .chart", 10, 100, 0, 0)
+                        drawPie(new_pie[2], "#pie_chart_3 .chart", 10, 100, 0, 0)
+
+                        console.log("newData: ", newData)
+                        d3.selectAll("#tableholder").remove()
+                        d3.select("#table-container").append("div").attr("id", "tableholder")
+                        var table = new Tabulator("#tableholder", {
+                            data:newData,           //load row data from array
+                            
+                            initialSort:[             //set the initial sort order of the data
+                                {column:"name", dir:"asc"},
+                            ],
+                            height:"400px",
+                            columns:[                 //define the table columns
+                            {title:"Sponsor", field:"LeadSponsorName", width:250},
+                            {title:"Sponsor Type", field:"LeadSponsorClass", width:150, headerFilter:"input"},
+                            {title:"Interventions", field:"InterventionName", width:150},
+                            {title:"Intervention Types", field:"InterventionType", width:150, headerFilter:"input"},
+                            {title:"Status", field:"OverallStatus", width:150, headerFilter:"input"},
+                            {title:"NCT", field:"NCTId", width:130, sorter:"date", width:150},
+                            {title:"Start Year", field:"StartDate", sorter:"date", width:150},
+                            {title:"Title", field:"BriefTitle", sorter:"false", width:150},
+                            {title:"Phase", field:"Phase", width:150},
+                            {title:"Primary Outcome", field:"PrimaryOutcomeDescription", sorter:"false", width:150},
+                            
+                            ],
+                        });
+
+
+                    })
+                }
+            }; // end of drawPie
+
+
+                
+            // Takes a list of what pie sections have been clicked
+            // Returns a filtered dataset based on those sections
+            function filterPie(filterOn) {
+                
+                console.log("Filter on: ", filterOn)
+                if (filterOn.length==0){
+                    newData = tabledata;
+                }
+                else if (filterOn.length > 1) {
+                    newData = tabledata.filter(function (d, i) {
+                        if ((d.Status == filterOn[0] || d.Intervention_Types == filterOn[0] || d.Sponsor_Type == filterOn[0]) && (d.Status == filterOn[1] || d.Intervention_Types == filterOn[1] || d.Sponsor_Type == filterOn[1])) {
+                            return d;
+                        } else {
+                            return;
+                        }
+                    })
+                } else {
+                    console.log("DATA IN FILTER PIE: ", tabledata)
+                    newData = tabledata.filter(function (d, i) {
+                        if (d.OverallStatus == filterOn || d.Intervention_Types == filterOn || d.Sponsor_Type == filterOn) {
+                            return d;
+                        } else {
+                            return;
+                        }
+                    });
+                }
+                
+                return newData;
+
+            } // end of filter Pie
+
+
+            // the function that runs when a checkbox is clicked 
+            // function runall() {
+
+            //     d3.selectAll(".chart").remove();
+            //     d3.selectAll(".div_RootBody").append("div").attr("class", "chart");
+
+            //     updated = filterData();
+            //     if (updated.length == 0){
+            //         window.alert("There are no trials matching your selection")
+            //         return;
+            //     } else {
+            //         updateTable(updated);
+            //         updated.shift()
+            //         console.log("UPDATED NEW removed: ", updated)
+            //         var pie_data = createPieDataSets(updated);
+            //         drawPie(pie_data[0], "#pie_chart_1 .chart", 10, 100, 0, 0)
+            //         drawPie(pie_data[1], "#pie_chart_2 .chart", 10, 100, 0, 0);
+            //         drawPie(pie_data[2], "#pie_chart_3 .chart", 10, 100, 0, 0)
+            //     }
+                
+            // };
+
+			
+		</script>
+
+
+
+{% endblock %}
